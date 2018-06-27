@@ -189,7 +189,7 @@ def main():
         log.error("+=================== RESCANNING MARKET =====================+");
         klinesDictionary = {};
         for pair1 in pairs:
-            klines = client.get_historical_klines(pair1 + against, Client.KLINE_INTERVAL_1MINUTE, '2 hours ago UTC');
+            klines = client.get_historical_klines(pair1 + against, Client.KLINE_INTERVAL_3MINUTE, '2 hours ago UTC');
 #            latestCandle = klines[-1];
             
 #            del(klines[-1]);
@@ -221,18 +221,29 @@ def main():
 #        suggestions = decisionAgent_movingAverage_strategy(klinesDictionary);
         
         # High last sell strategy:
-        suggestions = decisionAgent_gain_strategy(klinesDictionary);
+        suggestions = decisionAgent_movingAverage_strategy(klinesDictionary);
         
         portfolio = initiateTrade(suggestions, portfolio, client);
         previousGain = showBalance(portfolio, startingBalance, client, previousGain);
         
         if(graphOn):
             f1.canvas.blit();
-        time.sleep(60);
+            
+        if(graphOn):
+            f1.tight_layout();
+            f1.canvas.draw()            
+        
+        for pair1 in pairs:
+            klines = klinesDictionary[pair1+against];
+            while(True):
+                current_time = client.get_server_time()['serverTime']
+                if(int(current_time) >= int(float(klines[len(klines) - 1][6]))):
+                    break;
+                else:
+                    print("Waiting...");
+                    time.sleep(2);
 
-    if(graphOn):
-        f1.tight_layout();
-        f1.canvas.draw()
+
     
         
 def plotCandles(o, h, l, c, ema8, ema13, ema21, ema55, pair, ax1):
@@ -335,6 +346,7 @@ def decisionAgent_movingAverage_strategy(klinesDictionary):
         ema21 =  talib.EMA(prices, timeperiod=21);
         ema55 =  talib.EMA(prices, timeperiod=55);
         rsi = talib.RSI(prices, timeperiod=14);
+        macd, macdsignal, macdhist = talib.MACD(prices, fastperiod=12, slowperiod=26, signalperiod=9)
         
         if(graphOn):
             plotCandles(opens, highs, lows, prices, ema8, ema13, ema21, ema55, keyOfPairs, axesList[keyOfPairs]);
@@ -342,15 +354,17 @@ def decisionAgent_movingAverage_strategy(klinesDictionary):
         
         last = len(prices) - 2;
         
-#        if(aboveAllEMAs(ema8[last], ema13[last], ema21[last], ema55[last], prices[last], highs[last], lows[last])):
-        if(rsi[last] < 30):
+        if(macdhist[last] > macdhist[last - 1]):
+#           aboveAllEMAs(ema8[last], ema13[last], ema21[last], ema55[last], prices[last], highs[last], lows[last])):
+#        if(rsi[last] < 30):
             message = keyOfPairs + ': suggestion ===> BUY ';
             log.info(message);
             suggestions[keyOfPairs.replace('USDT', '')] = 'BUY';
 #        elif(belowAllEMAs(ema8[last], ema13[last], ema21[last], ema55[last], prices[last], highs[last], lows[last]) and
 #             rsi[last] >= 70):
-        elif(belowAllEMAs(ema8[last], ema13[last], ema21[last], ema55[last], prices[last], highs[last], lows[last]) and
-             rsi[last] > 70):            
+        elif(macdhist[last] < macdhist[last - 1]):
+#             belowAllEMAs(ema8[last], ema13[last], ema21[last], ema55[last], prices[last], highs[last], lows[last]) and
+#             rsi[last] > 70):            
             message = keyOfPairs + ': suggestion ===> SELL ';
             log.error(message);
             suggestions[keyOfPairs.replace('USDT', '')] = 'SELL';
