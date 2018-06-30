@@ -170,8 +170,7 @@ def main():
             
                     ]
     
-    api_key = "Q3sZBei1LKWiUxLCGnUUhVoFDcaXV0BD19J35bltp4pWEkBNHbEw7jLC2MJaTNhP"
-    api_secret = "57rLGuHMy2VhvgyWQCyWudtyW9L7ARAZ7XWZ9hbI78x1iTsRga5MwnoxhF6KUPEM";
+
     
     startingBalance = 10000.00; # USD
     portfolio = {};
